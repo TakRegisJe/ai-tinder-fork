@@ -106,7 +106,7 @@ function renderDeck() {
     const card = document.createElement("article");
     card.className = "card";
     card.dataset.id = p.id;
-    card.setAttribute("tabindex", "0");
+    card.setAttribute("tabindex", "-1");
     card.setAttribute("aria-label", `${p.name}, ${p.age}`);
 
     // Swipe-direction stamp overlays
@@ -151,6 +151,8 @@ function renderDeck() {
     addKeyHandlers(card, p);
   });
 
+  // Only the top card (last child) should be reachable via Tab
+  promoteTopCard();
   deckEl.removeAttribute("aria-busy");
 }
 
@@ -164,6 +166,19 @@ function makeLabel(cls, text) {
 // -------------------
 // Card dismissal
 // -------------------
+
+// Sets tabindex="-1" on every card, then makes the new top card (lastElementChild)
+// focusable and moves keyboard focus to it.
+function promoteTopCard() {
+  const cards = deckEl.querySelectorAll(".card");
+  cards.forEach((c) => c.setAttribute("tabindex", "-1"));
+  const top = deckEl.lastElementChild;
+  if (top && top.classList.contains("card")) {
+    top.setAttribute("tabindex", "0");
+    top.focus({ preventScroll: true });
+  }
+}
+
 function dismissTopCard(direction) {
   const top = deckEl.lastElementChild;
   if (top && top.classList.contains("card")) dismissCard(top, direction);
@@ -186,6 +201,7 @@ function dismissCard(card, direction) {
 
   card.addEventListener("transitionend", () => {
     card.remove();
+    promoteTopCard();
     checkEmptyDeck();
   }, { once: true });
 }
